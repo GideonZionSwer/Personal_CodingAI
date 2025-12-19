@@ -12,22 +12,50 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 const REPLICATE_API_TOKEN = config.replicate.apiToken;
 
 async function generateCode(prompt: string, currentFiles: any[]) {
-  const systemPrompt = `You are an expert full-stack developer.
-  You are given a request to build or modify a web application.
-  You currently have these files: ${JSON.stringify(currentFiles.map(f => ({ path: f.path, content: f.content })))}
+  const filesSummary = currentFiles.map(f => ({ 
+    path: f.path, 
+    lines: f.content.split('\n').length,
+    language: f.language 
+  }));
   
-  You must output a JSON object with the following structure:
-  {
-    "message": "A brief explanation of what you did",
-    "files": [
-      { "path": "filename.ext", "content": "file content..." }
-    ]
-  }
+  const isEmpty = currentFiles.length === 0 || currentFiles.every(f => f.content.trim() === '' || f.content === '// New file');
+
+  const systemPrompt = `You are an expert full-stack developer assistant.
   
-  If you need to modify a file, include the full new content in the 'files' array.
-  If you need to create a file, include it in the 'files' array.
-  If no code changes are needed, 'files' can be empty.
-  Only output valid JSON.`;
+CURRENT PROJECT STATE:
+- Files: ${JSON.stringify(filesSummary)}
+- Is empty: ${isEmpty}
+- Total files: ${currentFiles.length}
+
+FULL FILE CONTENTS (for context):
+${currentFiles.map(f => `[${f.path}]\n${f.content}`).join('\n\n---\n\n')}
+
+USER REQUEST: "${prompt}"
+
+INSTRUCTIONS:
+1. If the project is EMPTY, CREATE a complete starter project with all necessary files
+2. If files exist, MODIFY them intelligently based on the request
+3. UNDERSTAND CONTEXT: If user says "generate nodejs code with html webview" and project is empty, create:
+   - server.js or main.js (Node.js backend)
+   - index.html (frontend/webview)
+   - package.json (dependencies)
+4. Always check if files need to be created first before assuming they exist
+5. Create logical file structure (e.g., src/, public/, etc.) when appropriate
+6. Include all necessary dependencies and configurations
+
+OUTPUT JSON STRUCTURE:
+{
+  "message": "Brief explanation of what you built/modified",
+  "files": [
+    { "path": "filename.ext", "content": "full file content..." }
+  ]
+}
+
+RULES:
+- Include FULL content for all files in the 'files' array
+- Create additional files if needed to complete the project
+- If modifying existing files, provide complete new content
+- Output ONLY valid JSON, no markdown or extra text`;
 
   const response = await fetch("https://api.replicate.com/v1/models/anthropic/claude-4.5-sonnet/predictions", {
     method: "POST",

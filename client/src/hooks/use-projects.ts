@@ -61,6 +61,36 @@ export function useCreateProject() {
   });
 }
 
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.projects.delete.path, { id });
+      const res = await fetch(url, {
+        method: "DELETE",
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete project");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.projects.list.path] });
+      toast({
+        title: "Project deleted",
+        description: "Project deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+      });
+    },
+  });
+}
+
 // Chat Hook
 export function useProjectChat(projectId: number) {
   const queryClient = useQueryClient();
