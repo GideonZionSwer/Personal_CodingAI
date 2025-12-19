@@ -1,38 +1,78 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import {
+  projects, files, messages,
+  type Project, type InsertProject,
+  type File, type InsertFile,
+  type Message, type InsertMessage
+} from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Projects
+  createProject(project: InsertProject): Promise<Project>;
+  getProjects(): Promise<Project[]>;
+  getProject(id: number): Promise<Project | undefined>;
+
+  // Files
+  createFile(file: InsertFile): Promise<File>;
+  getFiles(projectId: number): Promise<File[]>;
+  updateFile(id: number, content: string): Promise<File>;
+  deleteFile(id: number): Promise<void>;
+
+  // Messages
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessages(projectId: number): Promise<Message[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  // Projects
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db.insert(projects).values(insertProject).returning();
+    return project;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getProjects(): Promise<Project[]> {
+    return await db.select().from(projects).orderBy(desc(projects.createdAt));
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  // Files
+  async createFile(insertFile: InsertFile): Promise<File> {
+    const [file] = await db.insert(files).values(insertFile).returning();
+    return file;
+  }
+
+  async getFiles(projectId: number): Promise<File[]> {
+    return await db.select().from(files).where(eq(files.projectId, projectId));
+  }
+
+  async updateFile(id: number, content: string): Promise<File> {
+    const [file] = await db.update(files)
+      .set({ content })
+      .where(eq(files.id, id))
+      .returning();
+    return file;
+  }
+
+  async deleteFile(id: number): Promise<void> {
+    await db.delete(files).where(eq(files.id, id));
+  }
+
+  // Messages
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db.insert(messages).values(insertMessage).returning();
+    return message;
+  }
+
+  async getMessages(projectId: number): Promise<Message[]> {
+    return await db.select().from(messages)
+      .where(eq(messages.projectId, projectId))
+      .orderBy(messages.createdAt);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
