@@ -5,9 +5,10 @@ import { FileTree } from "@/components/FileTree";
 import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
 import { ChatInterface } from "@/components/ChatInterface";
+import { Terminal } from "@/components/Terminal";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, Layout, MessageSquare, Save, Download, Plus, Package, History, Upload } from "lucide-react";
+import { Loader2, ChevronLeft, Layout, MessageSquare, Save, Download, Plus, Package, History, Upload, Terminal as TerminalIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { File } from "@shared/schema";
@@ -37,6 +38,7 @@ export default function ProjectView() {
   const [showVersions, setShowVersions] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [selectedFileVersions, setSelectedFileVersions] = useState<any[]>([]);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   
   const fileVersions = useFileVersions(selectedFile?.id ?? 0);
 
@@ -341,6 +343,9 @@ export default function ProjectView() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Terminal */}
+      <Terminal isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
     </div>
   );
 }
