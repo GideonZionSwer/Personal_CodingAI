@@ -1,39 +1,53 @@
 import { useParams } from "wouter";
 import { useProject } from "@/hooks/use-projects";
-import { useCreateFile, useUpdateFile } from "@/hooks/use-files";
+import { useCreateFile, useUpdateFile, useDeleteFile, useDownloadProject, useFileVersions, useSuggestFiles, useTemplates, useUseTemplate, useUploadFile } from "@/hooks/use-files";
 import { FileTree } from "@/components/FileTree";
 import { CodeEditor } from "@/components/CodeEditor";
 import { Preview } from "@/components/Preview";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
-import { Loader2, ChevronLeft, Layout, Terminal, Play, Save } from "lucide-react";
+import { Loader2, ChevronLeft, Layout, MessageSquare, Save, Download, Plus, Package, History, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { File } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProjectView() {
   const { id } = useParams();
   const projectId = Number(id);
   const { data: project, isLoading, error } = useProject(projectId);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [activeTab, setActiveTab] = useState<'preview' | 'chat'>('chat');
   const [code, setCode] = useState<string>("");
   const updateFile = useUpdateFile();
   const createFile = useCreateFile(projectId);
+  const deleteFile = useDeleteFile();
+  const downloadProject = useDownloadProject(projectId);
+  const templates = useTemplates();
+  const useTemplate = useUseTemplate(projectId);
+  const uploadFile = useUploadFile(projectId);
   const { toast } = useToast();
   
-  // New File State
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+  const [showVersions, setShowVersions] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedFileVersions, setSelectedFileVersions] = useState<any[]>([]);
+  
+  const fileVersions = useFileVersions(selectedFile?.id ?? 0);
 
-  // Auto-select first file on load
+  useEffect(() => {
+    if (selectedFile) {
+      fileVersions.refetch();
+    }
+  }, [selectedFile?.id]);
+
   useEffect(() => {
     if (project?.files.length && !selectedFile) {
-      // Prefer index.tsx or App.tsx or index.html
       const main = project.files.find(f => ['index.tsx', 'App.tsx', 'main.tsx', 'index.html'].some(n => f.path.endsWith(n)));
       const fileToSelect = main || project.files[0];
       setSelectedFile(fileToSelect);
@@ -41,10 +55,8 @@ export default function ProjectView() {
     }
   }, [project?.files]);
 
-  // Update local code state when selected file changes
   useEffect(() => {
     if (selectedFile) {
-      // Find the latest content from the project data (which might have been updated by AI)
       const freshFile = project?.files.find(f => f.id === selectedFile.id);
       if (freshFile && freshFile.content !== code) {
         setCode(freshFile.content);
@@ -54,7 +66,6 @@ export default function ProjectView() {
   }, [project?.files, selectedFile?.id]);
 
   const handleFileSelect = (file: File) => {
-    // If unsaved changes? (For simplicity, we assume auto-save or explicit save button)
     setSelectedFile(file);
     setCode(file.content);
   };
@@ -78,12 +89,27 @@ export default function ProjectView() {
 
     createFile.mutate({
       path: newFileName,
-      content: "// New file content",
+      content: "// New file",
       language: newFileName.split('.').pop() || 'plaintext'
     }, {
       onSuccess: () => {
         setIsNewFileOpen(false);
         setNewFileName("");
+      }
+    });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadFile.mutate(file);
+    }
+  };
+
+  const handleUseTemplate = (templateId: number) => {
+    useTemplate.mutate(templateId, {
+      onSuccess: () => {
+        setShowTemplates(false);
       }
     });
   };
@@ -119,7 +145,7 @@ export default function ProjectView() {
           </Link>
           <div className="flex items-center gap-2">
             <span className="font-semibold">{project.name}</span>
-            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">Beta</span>
+            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">IDE</span>
           </div>
         </div>
         
@@ -134,29 +160,64 @@ export default function ProjectView() {
             >
               <Save className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Save</span>
-              {/* Dirty indicator */}
               {code !== selectedFile.content && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
             </Button>
           )}
+          
           <div className="h-4 w-px bg-border/50 mx-2" />
+          
           <Button 
             size="sm" 
-            variant={activeTab === 'chat' ? "secondary" : "ghost"}
-            onClick={() => setActiveTab('chat')}
+            variant="ghost"
+            onClick={() => downloadProject.mutate()}
+            disabled={downloadProject.isPending}
             className="h-8 gap-2"
           >
-            <Terminal className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Chat</span>
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Download</span>
           </Button>
+
           <Button 
             size="sm" 
-            variant={activeTab === 'preview' ? "secondary" : "ghost"}
-            onClick={() => setActiveTab('preview')}
+            variant="ghost"
+            onClick={() => setShowTemplates(true)}
             className="h-8 gap-2"
           >
-            <Layout className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Preview</span>
+            <Package className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Templates</span>
           </Button>
+
+          {selectedFile && (
+            <Button 
+              size="sm" 
+              variant="ghost"
+              onClick={() => setShowVersions(true)}
+              className="h-8 gap-2"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">History</span>
+            </Button>
+          )}
+
+          <label>
+            <Button 
+              size="sm" 
+              variant="ghost"
+              className="h-8 gap-2"
+              asChild
+            >
+              <span>
+                <Upload className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Upload</span>
+              </span>
+            </Button>
+            <input 
+              type="file" 
+              hidden 
+              onChange={handleFileUpload}
+              accept="*/*"
+            />
+          </label>
         </div>
       </header>
 
@@ -204,21 +265,15 @@ export default function ProjectView() {
           
           <ResizableHandle className="bg-border/50 w-[1px]" />
           
-          {/* Right Panel: Chat or Preview */}
+          {/* Right Panel: Chat */}
           <ResizablePanel defaultSize={35}>
-            {activeTab === 'chat' ? (
-              <ChatInterface projectId={projectId} messages={project.messages} />
-            ) : (
-              <Preview 
-                files={project.files} 
-                refreshTrigger={project.files.reduce((acc, f) => acc + f.content.length, 0)} 
-              />
-            )}
+            <ChatInterface projectId={projectId} messages={project.messages} files={project.files} />
           </ResizablePanel>
           
         </ResizablePanelGroup>
       </div>
 
+      {/* New File Dialog */}
       <Dialog open={isNewFileOpen} onOpenChange={setIsNewFileOpen}>
         <DialogContent>
           <DialogHeader>
@@ -239,11 +294,57 @@ export default function ProjectView() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Templates Dialog */}
+      <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Project Templates</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4">
+            {templates.data?.map(template => (
+              <Button
+                key={template.id}
+                variant="outline"
+                onClick={() => handleUseTemplate(template.id)}
+                disabled={useTemplate.isPending}
+                className="justify-start flex-col items-start h-auto p-3"
+              >
+                <span className="font-semibold">{template.type}</span>
+                <span className="text-xs text-muted-foreground">{template.description}</span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={showVersions} onOpenChange={setShowVersions}>
+        <DialogContent className="max-w-2xl max-h-[600px]">
+          <DialogHeader>
+            <DialogTitle>Version History - {selectedFile?.path}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 overflow-y-auto">
+            {fileVersions.data?.map((version, idx) => (
+              <div 
+                key={version.id} 
+                className="p-3 border rounded-lg text-xs font-mono bg-secondary/20"
+              >
+                <div className="text-muted-foreground mb-2">
+                  Version {fileVersions.data!.length - idx} • {new Date(version.timestamp!).toLocaleString()}
+                </div>
+                <pre className="overflow-x-auto text-[11px] max-h-24 line-clamp-6">
+                  {version.content}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// Helper for the empty state
 function Code2(props: any) {
   return (
     <svg

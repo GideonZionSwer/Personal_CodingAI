@@ -1,28 +1,84 @@
 import { useState, useRef, useEffect } from "react";
-import { Message } from "@shared/schema";
+import { Message, File } from "@shared/schema";
 import { useProjectChat } from "@/hooks/use-projects";
+import { useSuggestFiles } from "@/hooks/use-files";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles, FileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ChatInterfaceProps {
   projectId: number;
   messages: Message[];
+  files: File[];
 }
 
-export function ChatInterface({ projectId, messages }: ChatInterfaceProps) {
+export function ChatInterface({ projectId, messages, files }: ChatInterfaceProps) {
   const [prompt, setPrompt] = useState("");
+  const [showFileSuggestions, setShowFileSuggestions] = useState(false);
+  const [fileQuery, setFileQuery] = useState("");
+  const [cursorPos, setCursorPos] = useState(0);
   const chatMutation = useProjectChat(projectId);
+  const fileSuggestions = useSuggestFiles(projectId, fileQuery);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, chatMutation.isPending]);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setPrompt(value);
+    setCursorPos(e.target.selectionStart);
+
+    // Check for @ mention
+    const beforeCursor = value.substring(0, e.target.selectionStart);
+    const lastAtIndex = beforeCursor.lastIndexOf("@");
+    
+    if (lastAtIndex !== -1) {
+      const query = beforeCursor.substring(lastAtIndex + 1);
+      if (query && !query.includes(" ")) {
+        setFileQuery(query);
+        setShowFileSuggestions(true);
+      } else {
+        setShowFileSuggestions(false);
+      }
+    } else {
+      setShowFileSuggestions(false);
+    }
+  };
+
+  const handleSelectFile = (file: File) => {
+    const beforeCursor = prompt.substring(0, cursorPos);
+    const lastAtIndex = beforeCursor.lastIndexOf("@");
+    const afterCursor = prompt.substring(cursorPos);
+    
+    const newPrompt = 
+      prompt.substring(0, lastAtIndex) + 
+      `@${file.path} ` + 
+      afterCursor;
+    
+    setPrompt(newPrompt);
+    setShowFileSuggestions(false);
+    setFileQuery("");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +90,7 @@ export function ChatInterface({ projectId, messages }: ChatInterfaceProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !showFileSuggestions) {
       e.preventDefault();
       handleSubmit(e as any);
     }
@@ -47,6 +103,7 @@ export function ChatInterface({ projectId, messages }: ChatInterfaceProps) {
           <Sparkles className="w-5 h-5 text-primary" />
           AI Assistant
         </h3>
+        <p className="text-xs text-muted-foreground mt-1">Type @ to mention files</p>
       </div>
       
       <ScrollArea className="flex-1 px-4">
@@ -55,6 +112,7 @@ export function ChatInterface({ projectId, messages }: ChatInterfaceProps) {
             <div className="text-center text-muted-foreground my-10 space-y-2">
               <Bot className="w-12 h-12 mx-auto opacity-20" />
               <p>Ask me to generate code or modify files.</p>
+              <p className="text-xs">Use @filename to reference files</p>
             </div>
           )}
           
@@ -106,32 +164,62 @@ export function ChatInterface({ projectId, messages }: ChatInterfaceProps) {
               </div>
             </motion.div>
           )}
+          
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
 
-      <div className="p-4 bg-background border-t border-border/50">
-        <form onSubmit={handleSubmit} className="relative">
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            className="min-h-[50px] max-h-[200px] pr-12 resize-none bg-secondary/30 border-border focus:ring-primary/20 scrollbar-thin rounded-xl"
-            disabled={chatMutation.isPending}
-          />
+      <div className="p-4 border-t border-border/50 bg-secondary/10">
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="relative">
+            <Popover open={showFileSuggestions} onOpenChange={setShowFileSuggestions}>
+              <PopoverTrigger asChild>
+                <Textarea
+                  ref={textareaRef}
+                  placeholder="Type @ to mention files... Ask anything!"
+                  value={prompt}
+                  onChange={handleTextChange}
+                  onKeyDown={handleKeyDown}
+                  className="min-h-[80px] text-sm resize-none"
+                />
+              </PopoverTrigger>
+              {showFileSuggestions && (
+                <PopoverContent className="w-[300px] p-0" side="top">
+                  <Command>
+                    <CommandList>
+                      {fileSuggestions.data && fileSuggestions.data.length > 0 ? (
+                        <CommandGroup>
+                          {fileSuggestions.data.map((file) => (
+                            <CommandItem
+                              key={file.id}
+                              value={file.path}
+                              onSelect={() => handleSelectFile(file)}
+                              className="cursor-pointer"
+                            >
+                              <FileIcon className="w-4 h-4 mr-2" />
+                              {file.path}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ) : (
+                        <CommandEmpty>No files found</CommandEmpty>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              )}
+            </Popover>
+          </div>
+          
           <Button 
             type="submit" 
-            size="icon" 
-            className="absolute right-2 bottom-2 h-8 w-8 rounded-lg transition-transform hover:scale-105 active:scale-95"
             disabled={!prompt.trim() || chatMutation.isPending}
+            className="w-full gap-2"
           >
             <Send className="w-4 h-4" />
+            Send
           </Button>
         </form>
-        <div className="text-xs text-muted-foreground text-center mt-2">
-          AI can generate errors. Check important info.
-        </div>
       </div>
     </div>
   );

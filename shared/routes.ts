@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertProjectSchema, insertFileSchema, insertMessageSchema, projects, files, messages } from './schema';
+import { insertProjectSchema, insertFileSchema, insertMessageSchema, insertTemplateSchema, projects, files, messages, templates, fileVersions, uploads } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -26,7 +26,7 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/projects',
-      input: insertProjectSchema.pick({ name: true }),
+      input: insertProjectSchema,
       responses: {
         201: z.custom<typeof projects.$inferSelect>(),
       },
@@ -35,7 +35,11 @@ export const api = {
       method: 'GET' as const,
       path: '/api/projects/:id',
       responses: {
-        200: z.custom<typeof projects.$inferSelect & { files: typeof files.$inferSelect[], messages: typeof messages.$inferSelect[] }>(),
+        200: z.custom<typeof projects.$inferSelect & { 
+          files: typeof files.$inferSelect[], 
+          messages: typeof messages.$inferSelect[],
+          uploads: typeof uploads.$inferSelect[]
+        }>(),
         404: errorSchemas.notFound,
       },
     },
@@ -44,7 +48,7 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/projects/:projectId/files',
-      input: insertFileSchema.omit({ id: true, projectId: true }),
+      input: insertFileSchema,
       responses: {
         201: z.custom<typeof files.$inferSelect>(),
       },
@@ -62,6 +66,89 @@ export const api = {
       path: '/api/files/:id',
       responses: {
         204: z.void(),
+      },
+    },
+    download: {
+      method: 'GET' as const,
+      path: '/api/projects/:projectId/download',
+      responses: {
+        200: z.unknown(),
+      },
+    },
+    suggest: {
+      method: 'GET' as const,
+      path: '/api/projects/:projectId/files/suggest/:query',
+      responses: {
+        200: z.array(z.custom<typeof files.$inferSelect>()),
+      },
+    },
+  },
+  versions: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/files/:fileId/versions',
+      responses: {
+        200: z.array(z.custom<typeof fileVersions.$inferSelect>()),
+      },
+    },
+  },
+  uploads: {
+    create: {
+      method: 'POST' as const,
+      path: '/api/projects/:projectId/uploads',
+      input: z.object({
+        fileName: z.string(),
+        fileType: z.string(),
+        fileSize: z.number(),
+        filePath: z.string(),
+      }),
+      responses: {
+        201: z.custom<typeof uploads.$inferSelect>(),
+      },
+    },
+    list: {
+      method: 'GET' as const,
+      path: '/api/projects/:projectId/uploads',
+      responses: {
+        200: z.array(z.custom<typeof uploads.$inferSelect>()),
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/uploads/:id',
+      responses: {
+        204: z.void(),
+      },
+    },
+  },
+  templates: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/templates',
+      responses: {
+        200: z.array(z.custom<typeof templates.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/templates',
+      input: insertTemplateSchema,
+      responses: {
+        201: z.custom<typeof templates.$inferSelect>(),
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/templates/:id',
+      responses: {
+        204: z.void(),
+      },
+    },
+    useTemplate: {
+      method: 'POST' as const,
+      path: '/api/projects/:projectId/use-template/:templateId',
+      responses: {
+        200: z.array(z.custom<typeof files.$inferSelect>()),
       },
     },
   },

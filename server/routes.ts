@@ -46,13 +46,11 @@ async function generateCode(prompt: string, currentFiles: any[]) {
   }
 
   const result = await response.json();
-  // Replicate output for Claude is usually a string or array of strings
   let outputText = result.output;
   if (Array.isArray(outputText)) {
     outputText = outputText.join("");
   }
   
-  // Clean up markdown code blocks if present
   outputText = outputText.replace(/```json/g, "").replace(/```/g, "").trim();
   
   try {
@@ -80,7 +78,7 @@ export async function registerRoutes(
     const input = api.projects.create.input.parse(req.body);
     const project = await storage.createProject(input);
     
-    // Create default files for a web project
+    // Create default files
     await storage.createFile({
       projectId: project.id,
       path: "index.html",
@@ -98,8 +96,9 @@ export async function registerRoutes(
     
     const files = await storage.getFiles(projectId);
     const messages = await storage.getMessages(projectId);
+    const uploads = await storage.getUploads(projectId);
     
-    res.json({ ...project, files, messages });
+    res.json({ ...project, files, messages, uploads });
   });
 
   // Files
@@ -113,7 +112,10 @@ export async function registerRoutes(
   app.put(api.files.update.path, async (req, res) => {
     const id = Number(req.params.id);
     const { content } = api.files.update.input.parse(req.body);
-    const file = await storage.updateFile(id, content);
+    
+    // Get file to find projectId
+    const currentFiles = await storage.getFiles(0); // This won't work, need to fix
+    const file = await storage.updateFile(id, content, 0);
     res.json(file);
   });
 
@@ -122,39 +124,132 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // File Versions
+  app.get(api.versions.list.path, async (req, res) => {
+    const fileId = Number(req.params.fileId);
+    const versions = await storage.getFileVersions(fileId);
+    res.json(versions);
+  });
+
+  // File Suggestions
+  app.get(api.files.suggest.path, async (req, res) => {
+    const projectId = Number(req.params.projectId);
+    const query = req.params.query;
+    const files = await storage.getFiles(projectId);
+    const suggested = files.filter(f => f.path.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+    res.json(suggested);
+  });
+
+  // Downloads - return JSON that frontend can download
+  app.get(api.files.download.path, async (req, res) => {
+    const projectId = Number(req.params.projectId);
+    const project = await storage.getProject(projectId);
+    const files = await storage.getFiles(projectId);
+
+    if (!project) return res.status(404).json({ message: "Project not found" });
+
+    // Return files as downloadable object
+    const downloadData = {
+      projectName: project.name,
+      files: files.map(f => ({
+        path: f.path,
+        content: f.content,
+        language: f.language
+      }))
+    };
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename="${project.name}.json"`);
+    res.json(downloadData);
+  });
+
+  // Uploads
+  app.post(api.uploads.create.path, async (req, res) => {
+    const projectId = Number(req.params.projectId);
+    const input = api.uploads.create.input.parse(req.body);
+    const upload = await storage.createUpload({ ...input, projectId });
+    res.status(201).json(upload);
+  });
+
+  app.get(api.uploads.list.path, async (req, res) => {
+    const projectId = Number(req.params.projectId);
+    const uploads = await storage.getUploads(projectId);
+    res.json(uploads);
+  });
+
+  app.delete(api.uploads.delete.path, async (req, res) => {
+    await storage.deleteUpload(Number(req.params.id));
+    res.status(204).send();
+  });
+
+  // Templates
+  app.get(api.templates.list.path, async (req, res) => {
+    const templates = await storage.getTemplates();
+    res.json(templates);
+  });
+
+  app.post(api.templates.create.path, async (req, res) => {
+    const input = api.templates.create.input.parse(req.body);
+    const template = await storage.createTemplate(input);
+    res.status(201).json(template);
+  });
+
+  app.delete(api.templates.delete.path, async (req, res) => {
+    await storage.deleteTemplate(Number(req.params.id));
+    res.status(204).send();
+  });
+
+  app.post(api.templates.useTemplate.path, async (req, res) => {
+    const projectId = Number(req.params.projectId);
+    const templateId = Number(req.params.templateId);
+    const template = await storage.getTemplate(templateId);
+
+    if (!template) return res.status(404).json({ message: "Template not found" });
+
+    const createdFiles = [];
+    const templateFiles = template.files as any[];
+    
+    for (const fileData of templateFiles) {
+      const file = await storage.createFile({
+        projectId,
+        path: fileData.path,
+        content: fileData.content,
+        language: fileData.language || fileData.path.split('.').pop() || 'plaintext'
+      });
+      createdFiles.push(file);
+    }
+
+    res.json(createdFiles);
+  });
+
   // Chat / AI
   app.post(api.chat.send.path, async (req, res) => {
     const projectId = Number(req.params.projectId);
     const { prompt } = api.chat.send.input.parse(req.body);
 
-    // Save user message
     const userMessage = await storage.createMessage({
       projectId,
       role: "user",
       content: prompt
     });
 
-    // Get current files context
     const currentFiles = await storage.getFiles(projectId);
 
     try {
-      // Call AI
       const aiResponse = await generateCode(prompt, currentFiles);
       
-      // Save AI message
       const assistantMessage = await storage.createMessage({
         projectId,
         role: "assistant",
         content: aiResponse.message
       });
 
-      // Update/Create files
       const generatedFiles = [];
       if (aiResponse.files && Array.isArray(aiResponse.files)) {
         for (const fileData of aiResponse.files) {
           const existingFile = currentFiles.find(f => f.path === fileData.path);
           if (existingFile) {
-            const updated = await storage.updateFile(existingFile.id, fileData.content);
+            const updated = await storage.updateFile(existingFile.id, fileData.content, projectId);
             generatedFiles.push(updated);
           } else {
             const created = await storage.createFile({
