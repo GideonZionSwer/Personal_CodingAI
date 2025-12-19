@@ -94,6 +94,7 @@ export function useDeleteProject() {
 // Chat Hook
 export function useProjectChat(projectId: number) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async (prompt: string) => {
@@ -105,11 +106,25 @@ export function useProjectChat(projectId: number) {
       });
       
       if (!res.ok) throw new Error("Failed to send message");
-      return api.chat.send.responses[200].parse(await res.json());
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Show toast if files were created
+      if (data.generatedFiles && data.generatedFiles.length > 0) {
+        toast({
+          title: "Files created",
+          description: `Created ${data.generatedFiles.length} file(s) from AI response`,
+        });
+      }
       // Invalidate the project query to refresh files and messages
       queryClient.invalidateQueries({ queryKey: [api.projects.get.path, projectId] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+      });
     },
   });
 }
