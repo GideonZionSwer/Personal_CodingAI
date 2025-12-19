@@ -43,6 +43,13 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/projects/:id',
+      responses: {
+        204: z.void(),
+      },
+    },
   },
   files: {
     create: {

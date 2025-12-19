@@ -15,6 +15,7 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<void>;
 
   // Files
   createFile(file: InsertFile & { projectId: number }): Promise<File>;
@@ -56,6 +57,10 @@ export class DatabaseStorage implements IStorage {
   async getProject(id: number): Promise<Project | undefined> {
     const [project] = await db.select().from(projects).where(eq(projects.id, id));
     return project;
+  }
+
+  async deleteProject(id: number): Promise<void> {
+    await db.delete(projects).where(eq(projects.id, id));
   }
 
   // Files

@@ -3,8 +3,13 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import * as fs from "fs";
+import * as path from "path";
 
-const REPLICATE_API_TOKEN = "";
+// Load config from config.json
+const configPath = path.join(process.cwd(), 'config.json');
+const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+const REPLICATE_API_TOKEN = config.replicate.apiToken;
 
 async function generateCode(prompt: string, currentFiles: any[]) {
   const systemPrompt = `You are an expert full-stack developer.
@@ -99,6 +104,12 @@ export async function registerRoutes(
     const uploads = await storage.getUploads(projectId);
     
     res.json({ ...project, files, messages, uploads });
+  });
+
+  app.delete(api.projects.delete.path, async (req, res) => {
+    const projectId = Number(req.params.id);
+    await storage.deleteProject(projectId);
+    res.status(204).send();
   });
 
   // Files
