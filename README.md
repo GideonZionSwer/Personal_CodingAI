@@ -1,3 +1,7 @@
+![Web Interface](photo/web.png)
+
+![Enter Interface](photo/enter.png)
+
 # AI Code Generator Platform
 
 An intelligent full-stack web application that generates, manages, and edits code using AI. Built with React, Express.js, TypeScript, and Replicate API.
