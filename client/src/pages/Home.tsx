@@ -20,7 +20,7 @@ export default function Home() {
                 <Zap className="w-6 h-6 text-primary-foreground" />
               </div>
               <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
-                Bolt.new Clone
+                CODE GENERATOR
               </h1>
             </div>
             <p className="text-muted-foreground text-lg max-w-lg">

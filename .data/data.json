@@ -1,0 +1,79 @@
+{
+  "projects": [
+    {
+      "name": "o",
+      "id": 1,
+      "createdAt": "2025-12-21T01:19:16.732Z"
+    }
+  ],
+  "files": [
+    {
+      "projectId": 1,
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html>\n<head>\n<title>My App</title>\n</head>\n<body>\n<h1>Hello World</h1>\n</body>\n</html>",
+      "language": "html",
+      "id": 1,
+      "createdAt": "2025-12-21T01:19:16.732Z"
+    }
+  ],
+  "fileVersions": [],
+  "uploads": [],
+  "templates": [
+    {
+      "name": "Node.js Backend",
+      "type": "nodejs",
+      "description": "Express.js REST API server with Node.js",
+      "files": "[{\"path\":\"package.json\",\"content\":\"{\\n  \\\"name\\\": \\\"nodejs-app\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"main\\\": \\\"server.js\\\",\\n  \\\"scripts\\\": {\\n    \\\"start\\\": \\\"node server.js\\\",\\n    \\\"dev\\\": \\\"nodemon server.js\\\"\\n  },\\n  \\\"dependencies\\\": {\\n    \\\"express\\\": \\\"^4.18.2\\\",\\n    \\\"cors\\\": \\\"^2.8.5\\\"\\n  }\\n}\",\"language\":\"json\"},{\"path\":\"server.js\",\"content\":\"const express = require('express');\\nconst cors = require('cors');\\nconst app = express();\\n\\napp.use(cors());\\napp.use(express.json());\\n\\napp.get('/api/hello', (req, res) => {\\n  res.json({ message: 'Hello from Node.js!' });\\n});\\n\\nconst PORT = process.env.PORT || 5000;\\napp.listen(PORT, () => {\\n  console.log(`Server running on port ${PORT}`);\\n});\",\"language\":\"javascript\"},{\"path\":\"index.html\",\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n  <meta charset=\\\"UTF-8\\\">\\n  <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n  <title>Node.js App</title>\\n  <style>\\n    body { font-family: Arial, sans-serif; margin: 40px; }\\n    button { padding: 10px 20px; cursor: pointer; }\\n  </style>\\n</head>\\n<body>\\n  <h1>Node.js Backend Application</h1>\\n  <button onclick=\\\"fetchData()\\\">Call API</button>\\n  <p id=\\\"result\\\"></p>\\n  \\n  <script>\\n    async function fetchData() {\\n      const res = await fetch('/api/hello');\\n      const data = await res.json();\\n      document.getElementById('result').textContent = data.message;\\n    }\\n  </script>\\n</body>\\n</html>\",\"language\":\"html\"}]",
+      "id": 1,
+      "createdAt": "2025-12-21T01:19:02.953Z"
+    },
+    {
+      "name": "React App",
+      "type": "react",
+      "description": "Modern React application with JSX",
+      "files": "[{\"path\":\"package.json\",\"content\":\"{\\n  \\\"name\\\": \\\"react-app\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"private\\\": true,\\n  \\\"dependencies\\\": {\\n    \\\"react\\\": \\\"^18.2.0\\\",\\n    \\\"react-dom\\\": \\\"^18.2.0\\\"\\n  },\\n  \\\"scripts\\\": {\\n    \\\"start\\\": \\\"react-scripts start\\\",\\n    \\\"build\\\": \\\"react-scripts build\\\"\\n  }\\n}\",\"language\":\"json\"},{\"path\":\"src/App.jsx\",\"content\":\"import { useState } from 'react';\\n\\nexport default function App() {\\n  const [count, setCount] = useState(0);\\n\\n  return (\\n    <div className=\\\"app\\\">\\n      <h1>React Counter App</h1>\\n      <p>Count: {count}</p>\\n      <button onClick={() => setCount(count + 1)}>\\n        Increment\\n      </button>\\n    </div>\\n  );\\n}\",\"language\":\"javascript\"},{\"path\":\"src/index.css\",\"content\":\"body {\\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen';\\n  margin: 0;\\n  padding: 20px;\\n  background: #f5f5f5;\\n}\\n\\n.app {\\n  max-width: 600px;\\n  margin: 0 auto;\\n  background: white;\\n  padding: 40px;\\n  border-radius: 8px;\\n  box-shadow: 0 2px 8px rgba(0,0,0,0.1);\\n}\\n\\nbutton {\\n  padding: 10px 20px;\\n  cursor: pointer;\\n  background: #007bff;\\n  color: white;\\n  border: none;\\n  border-radius: 4px;\\n}\",\"language\":\"css\"}]",
+      "id": 2,
+      "createdAt": "2025-12-21T01:19:02.955Z"
+    },
+    {
+      "name": "Python Flask API",
+      "type": "python",
+      "description": "Flask backend with REST API",
+      "files": "[{\"path\":\"requirements.txt\",\"content\":\"Flask==2.3.0\\nFlask-CORS==4.0.0\\npython-dotenv==1.0.0\",\"language\":\"plaintext\"},{\"path\":\"app.py\",\"content\":\"from flask import Flask, jsonify\\nfrom flask_cors import CORS\\n\\napp = Flask(__name__)\\nCORS(app)\\n\\n@app.route('/api/message', methods=['GET'])\\ndef get_message():\\n    return jsonify({'message': 'Hello from Flask!'})\\n\\n@app.route('/api/data', methods=['GET'])\\ndef get_data():\\n    return jsonify({\\n        'status': 'success',\\n        'data': [1, 2, 3, 4, 5]\\n    })\\n\\nif __name__ == '__main__':\\n    app.run(debug=True, port=5000)\",\"language\":\"python\"}]",
+      "id": 3,
+      "createdAt": "2025-12-21T01:19:02.955Z"
+    },
+    {
+      "name": "HTML/CSS/JS",
+      "type": "html",
+      "description": "Vanilla HTML, CSS, and JavaScript project",
+      "files": "[{\"path\":\"index.html\",\"content\":\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<head>\\n  <meta charset=\\\"UTF-8\\\">\\n  <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">\\n  <title>Web App</title>\\n  <link rel=\\\"stylesheet\\\" href=\\\"style.css\\\">\\n</head>\\n<body>\\n  <nav class=\\\"navbar\\\">\\n    <h1>My Web App</h1>\\n  </nav>\\n  \\n  <main class=\\\"container\\\">\\n    <section>\\n      <h2>Welcome</h2>\\n      <p>This is a vanilla JavaScript web application.</p>\\n      <button id=\\\"btn\\\">Click Me</button>\\n      <p id=\\\"output\\\"></p>\\n    </section>\\n  </main>\\n\\n  <script src=\\\"script.js\\\"></script>\\n</body>\\n</html>\",\"language\":\"html\"},{\"path\":\"style.css\",\"content\":\"* {\\n  margin: 0;\\n  padding: 0;\\n  box-sizing: border-box;\\n}\\n\\nbody {\\n  font-family: 'Segoe UI', sans-serif;\\n  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\n  min-height: 100vh;\\n  color: #333;\\n}\\n\\n.navbar {\\n  background: rgba(0,0,0,0.2);\\n  padding: 20px;\\n  color: white;\\n}\\n\\n.container {\\n  max-width: 800px;\\n  margin: 40px auto;\\n  background: white;\\n  padding: 40px;\\n  border-radius: 8px;\\n  box-shadow: 0 10px 40px rgba(0,0,0,0.2);\\n}\\n\\nbutton {\\n  background: #667eea;\\n  color: white;\\n  border: none;\\n  padding: 12px 30px;\\n  border-radius: 4px;\\n  cursor: pointer;\\n  font-size: 1em;\\n}\\n\\nbutton:hover {\\n  background: #764ba2;\\n}\",\"language\":\"css\"},{\"path\":\"script.js\",\"content\":\"document.getElementById('btn').addEventListener('click', function() {\\n  document.getElementById('output').textContent = 'Button clicked at ' + new Date().toLocaleTimeString();\\n});\",\"language\":\"javascript\"}]",
+      "id": 4,
+      "createdAt": "2025-12-21T01:19:02.955Z"
+    }
+  ],
+  "messages": [
+    {
+      "projectId": 1,
+      "role": "user",
+      "content": "hi",
+      "id": 1,
+      "createdAt": "2025-12-21T01:19:24.330Z"
+    },
+    {
+      "projectId": 1,
+      "role": "assistant",
+      "content": "Hello! I see you already have a basic HTML file (index.html) with a 'Hello World' heading. How can I help you enhance or modify your project? For example, I can:\n\n- Add styling with CSS\n- Add interactivity with JavaScript\n- Convert it to a full-stack app with Node.js backend\n- Add a specific feature or component\n- Create a completely different type of project\n\nWhat would you like to build or modify?",
+      "id": 2,
+      "createdAt": "2025-12-21T01:19:28.157Z"
+    }
+  ],
+  "nextIds": {
+    "projects": 2,
+    "files": 2,
+    "fileVersions": 1,
+    "uploads": 1,
+    "templates": 5,
+    "messages": 3
+  }
+}
