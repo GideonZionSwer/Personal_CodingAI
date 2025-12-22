@@ -47,8 +47,9 @@ An intelligent full-stack web application that generates, manages, and edits cod
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd project-directory
+   git clone https://github.com/sheikhtamimlover/Personal_CodingAI.git
+   cd Personal_CodingAI
+
    ```
 
 2. **Install dependencies**
